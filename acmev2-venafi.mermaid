@@ -1,0 +1,52 @@
+sequenceDiagram
+    title ACME v2 Client to Venafi ACME Server: Certificate Automation Process
+
+    %% Define Participants
+    participant Client as ACME v2 Client
+    participant ACME as Venafi ACME Server
+    participant DNS as DNS Provider (for DNS-01 challenge)
+    participant CertDB as Venafi Certificate Database
+
+    %% Step-by-Step Process with Detailed Steps
+    autonumber
+
+    %% Client initiates certificate request
+    Client ->> ACME: Create Order (domain names)
+    ACME ->> ACME: Validate Order parameters (check domain names)
+    ACME ->> Client: Respond with Order ID and pending status
+
+    %% ACME Server sends a challenge for domain ownership
+    Client ->> ACME: Request for challenge
+    ACME ->> Client: Respond with DNS-01/HTTP-01 challenge
+
+    %% Client configures DNS or HTTP server based on challenge type
+    alt DNS-01 Challenge
+        Client ->> DNS: Add DNS TXT record (_acme-challenge.<domain>)
+        ACME ->> DNS: Query DNS for TXT record
+    else HTTP-01 Challenge
+        Client ->> Client: Setup HTTP server to respond to ACME challenge
+        ACME ->> Client: Request for HTTP challenge file
+    end
+
+    %% ACME Server verifies the challenge
+    ACME ->> Client: ACME Challenge Validation success
+
+    %% Client finalizes the order
+    Client ->> ACME: Finalize Order (CSR submission)
+    ACME ->> ACME: Validate CSR and finalize order
+
+    %% Venafi server issues the certificate
+    ACME ->> CertDB: Generate certificate and store in Venafi Database
+    CertDB -->> ACME: Certificate ready
+
+    %% ACME Server provides certificate to client
+    ACME ->> Client: Issue Certificate
+
+    %% Client downloads the certificate and stores it locally
+    Client ->> Client: Download and store certificate locally
+
+    %% Automation for Renewal Process
+    loop Certificate Expiry Check
+        Client ->> Client: Check certificate expiry
+        Client ->> ACME: Re-initiate certificate request if near expiry
+    end
