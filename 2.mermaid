@@ -1,0 +1,56 @@
+sequenceDiagram
+    title Cert-Manager ACME v2 Client on Kubernetes with HashiCorp Vault ACME Server and Venafi PKI Policy Governance
+
+    %% Define Participants
+    participant K8sClient as Cert-Manager ACME Client (K8s Cluster)
+    participant Vault as HashiCorp Vault (ACME Server)
+    participant Venafi as Venafi PKI Engine (Policy and Compliance)
+    participant DNS as DNS Provider (for DNS-01 challenge)
+    participant K8sSecret as Kubernetes Secret Store
+
+    %% Detailed Steps with Autonumbering
+    autonumber
+
+    %% Step 1: Cert-Manager initiates certificate request with Vault
+    K8sClient ->> Vault: Create Order (CSR with domain names)
+    Vault ->> Venafi: Validate CSR and domain compliance with policy rules
+
+    %% Step 2: Venafi enforces policy validation
+    Venafi ->> Venafi: Verify domain compliance, challenge type, allowed issuers
+    Venafi ->> Vault: Respond with compliance status and allowed challenge type
+
+    %% Step 3: Vault provides challenge to Cert-Manager
+    Vault ->> K8sClient: Respond with Order ID, pending status, and challenge (DNS-01/HTTP-01)
+
+    %% Step 4: Cert-Manager configures challenge on K8s Cluster
+    alt DNS-01 Challenge
+        K8sClient ->> DNS: Add DNS TXT record (_acme-challenge.<domain>)
+        Vault ->> DNS: Query DNS for TXT record validation
+    else HTTP-01 Challenge
+        K8sClient ->> K8sClient: Serve HTTP challenge file in specified path
+        Vault ->> K8sClient: Request HTTP challenge file for verification
+    end
+
+    %% Step 5: Vault verifies the challenge, confirming domain ownership
+    Vault ->> K8sClient: Challenge validated, ownership proven
+
+    %% Step 6: Vault issues certificate and stores in Kubernetes Secret
+    Vault ->> Vault: Sign certificate (using intermediate CA or Venafi policy-defined CA)
+    Vault ->> K8sSecret: Store certificate in Kubernetes Secret Store
+
+    %% Step 7: Cert-Manager retrieves issued certificate from K8s Secret
+    K8sClient ->> K8sSecret: Retrieve issued certificate for application use
+
+    %% Step 8: Venafi monitors and governs policy compliance with periodic audits
+    loop Policy Compliance Audit
+        Venafi ->> Vault: Request audit logs of issued certificates
+        Vault ->> Venafi: Provide issuance details for compliance
+    end
+
+    %% Step 9: Automated Renewal Process
+    loop Certificate Expiry Monitoring
+        K8sClient ->> K8sClient: Check certificate expiry in K8s Secret
+        K8sClient ->> Vault: Request renewal before expiry
+        Vault ->> Venafi: Re-validate policy compliance
+        Vault ->> K8sSecret: Issue renewed certificate to Kubernetes Secret Store
+    end
