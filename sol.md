@@ -216,7 +216,26 @@ Handles idempotency, backups, and execution.
 
     - name: Audit Log
       debug: 
-        msg: "{{ vcert_out.stdout_lines }}"
+        msg: "{{ vcert_out.stdout_lines }}
+    - name: Setup vCert Renewal (Last Sunday of Month)
+      cron:
+        name: "Venafi vCert Monthly Renewal"
+        minute: "0"
+        hour: "2"
+        weekday: "0" # 0 = Sunday
+        job: '[ "$(date +\%d)" -gt 24 ] && /usr/local/bin/vcert run -f /etc/venafi/playbook.yaml'
+    - name: Setup vCert Renewal (Windows Last Sunday)
+      win_scheduled_task:
+        name: "VenafiCertificateAutoRenewal"
+        actions:
+          - path: "C:\\Program Files\\Venafi\\vcert.exe"
+            arguments: "run -f C:\\ProgramData\\Venafi\\playbook.yaml"
+        triggers:
+          - type: monthlydow
+            weeks: last # Specifically targets the last week
+            days_of_week: sunday
+            start_boundary: "2024-01-01T02:00:00"
+        username: SYSTEM"
 
 ```
 
