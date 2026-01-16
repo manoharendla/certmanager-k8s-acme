@@ -303,3 +303,9 @@ pipeline {
 1. **Jenkins:** Runs nightly on schedule.
 2. **Policy:** Skips CR check.
 3. **Ansible/vCert:** Renews any certificates within the `renewBefore` window (e.g., 30 days).
+
+
+ghe-ssl-certificate-install -c /home/admin/$CERT_NAME.crt -k /home/admin/$CERT_NAME.key
+    
+    # Apply the configuration to active services
+    ghe-config-apply
