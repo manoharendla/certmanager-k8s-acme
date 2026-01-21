@@ -40,6 +40,8 @@ The data lifecycle moves through three zones: The **Source Zone** (Venafi), the 
 3. **Transport:** If the event matches the rule (e.g., Severity = Critical), it is formatted into **CEF (Common Event Format)** and transmitted via **TCP** to Splunk.
 4. **Enrichment (Daily):** Independently, at 02:00 AM, the Splunk Heavy Forwarder authenticates to the Venafi WebSDK API and downloads the current state of all 50,000+ certificates to update the compliance dashboards.
 
+
+
 ### 2.2 Architecture Diagram
 
 ```mermaid
